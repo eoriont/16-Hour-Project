@@ -6,13 +6,15 @@ $(document).ready(function() {
         render : function() {
             this.canvas.width = document.body.clientWidth; //1900
             this.canvas.height = window.innerHeight;//document.body.clientHeight; //880
+            this.canvas.style.left = '400px';
             console.log(window.innerHeight);
             this.context = this.canvas.getContext("2d");
-            document.body.insertBefore(this.canvas, document.body.childNodes[0]);
+            document.body.insertBefore(this.canvas, document.body.childNodes[1]);
         }
     };
     cv.render();
     var c = cv.canvas;
+    var div = document.getElementById("lines");
     var size = 2;
     var ctx = c.getContext("2d");
     var mousePos = {
@@ -42,19 +44,19 @@ $(document).ready(function() {
     mouseDown=true;});
     c.addEventListener('mouseup', function() {
         var line = {
-                colorr: color.r,
-                colorg: color.g,
-                colorb: color.b,
-                size: size,
-                startX: mousePos.lastX,
-                startY: mousePos.lastY,
-                endX: mousePos.x,
-                endY: mousePos.y
-            }
-            pushLine(line);
-            console.log(lines);
+            colorr: color.r,
+            colorg: color.g,
+            colorb: color.b,
+            size: size,
+            startX: mousePos.lastX,
+            startY: mousePos.lastY,
+            endX: mousePos.x,
+            endY: mousePos.y
+        }
+        pushLine(line);
         drawLines();
-        mouseDown=false;});
+        mouseDown=false;
+    });
 
 
     function getMousePos(canvas, evt) {
@@ -87,6 +89,21 @@ $(document).ready(function() {
 
     function pushLine(line) {
         lines.push(line);
+        console.log(line);
+        
+        $("#lines").append('<tr><td>'+line.startX+'</td><td>'+line.startY+'</td><td>'+getEquation(line)+"</td>");
+    }
+
+    function getEquation(line) {
+        var coord1 = {x:line.startX,y:line.startY};
+        var coord2 = {x:line.endX,y:line.endY};
+        var cy = coord1.y-coord2.y;
+        var cx = coord1.x-coord2.x;
+        var m = cy/cx;
+        var part = m * coord1.x;
+        var b = coord1.y - part;
+        var equation = "y = "+m*-1+"x + "+b;
+        return equation;
     }
 
     function drawLines() {
