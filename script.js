@@ -6,7 +6,7 @@ $(document).ready(function() {
         render : function() {
             this.canvas.width = document.body.clientWidth;
             this.canvas.height = window.innerHeight;
-            this.canvas.style.left = '400px';
+            //this.canvas.style.left = '400px';
             this.context = this.canvas.getContext("2d");
             document.body.insertBefore(this.canvas, document.body.childNodes[1]);
         }
@@ -88,8 +88,10 @@ $(document).ready(function() {
     }
 
     function pushLine(line) {
-        lines.push(line);                                                                         //getEquation(line)
-        $("#lines").append('<tr><td>'+line.startX+'</td><td>'+line.startY+'</td><td>'+"test"+'</td><td><input type="submit" value="X" id="deleteLine" lineid="'+line.id+'" class="delete"></td></tr>');
+        lines.push(line);                                                            //getEquation(line)
+        var coord1 = "("+line.startX+","+line.startY+")";
+        var coord2 = "("+line.endX+","+line.endY+")";
+        $("#lines").append('<tr><td>'+coord1+'</td><td>'+coord2+'</td><td>'+getEquation(line)+'</td><td><input type="submit" value="X" id="deleteLine" lineid="'+line.id+'" class="delete"></td></tr>');
     }
 
     function getEquation(line) {
@@ -100,7 +102,15 @@ $(document).ready(function() {
         var m = cy/cx;
         var part = m * coord1.x;
         var b = coord1.y - part;
-        var equation = "y = "+fractionToDecimal(m*-1)+"x + "+fractionToDecimal(b);
+        if(fractionToDecimal(m*-1).length < (m*-1).length) {
+            m = fractionToDecimal(m*-1);
+        } else {
+            m = m*-1;
+        }
+        if(fractionToDecimal(b).length < b.length) {
+            b = fractionToDecimal(b);
+        }
+        var equation = "y = "+m+"x + "+b;
         return equation;
     }
 
@@ -167,4 +177,18 @@ $(document).ready(function() {
         }
         lines = newlines;
     }
+
+    $('#show-lines-table').click(function() {
+        var moveLength = 400;
+        $("#lines-table").css("width", moveLength+"px");
+        $("#lines-table").css("left", 225-moveLength+"px");
+        $(".lines-tab").css("left", 30+"px")
+        if($(this).css("margin-left") == moveLength+"px") {
+            $('#lines-table').animate({"margin-left": '-='+moveLength});
+            $('#show-lines-table').animate({"margin-left": '-='+moveLength});
+        } else {
+            $('#lines-table').animate({"margin-left": '+='+moveLength});
+            $('#show-lines-table').animate({"margin-left": '+='+moveLength});
+        }
+    });
 });
