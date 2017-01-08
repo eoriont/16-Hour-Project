@@ -4,10 +4,9 @@ $(document).ready(function() {
     var cv = {
         canvas : document.createElement("canvas"),
         render : function() {
-            this.canvas.width = document.body.clientWidth; //1900
-            this.canvas.height = window.innerHeight;//document.body.clientHeight; //880
+            this.canvas.width = document.body.clientWidth;
+            this.canvas.height = window.innerHeight;
             this.canvas.style.left = '400px';
-            console.log(window.innerHeight);
             this.context = this.canvas.getContext("2d");
             document.body.insertBefore(this.canvas, document.body.childNodes[1]);
         }
@@ -88,10 +87,8 @@ $(document).ready(function() {
     }
 
     function pushLine(line) {
-        lines.push(line);
-        console.log(line);
-        
-        $("#lines").append('<tr><td>'+line.startX+'</td><td>'+line.startY+'</td><td>'+getEquation(line)+"</td>");
+        lines.push(line);                                                                         //getEquation(line)
+        $("#lines").append('<tr><td>'+line.startX+'</td><td>'+line.startY+'</td><td>'+"test"+'</td><td><input type="submit" value="X" id="deleteLine" delIndex="'+indexOfLine(line)+'" class="delete"></td></tr>');
     }
 
     function getEquation(line) {
@@ -102,7 +99,7 @@ $(document).ready(function() {
         var m = cy/cx;
         var part = m * coord1.x;
         var b = coord1.y - part;
-        var equation = "y = "+m*-1+"x + "+b;
+        var equation = "y = "+fractionToDecimal(m*-1)+"x + "+fractionToDecimal(b);
         return equation;
     }
 
@@ -119,5 +116,48 @@ $(document).ready(function() {
             ctx.lineTo(i.endX,i.endY);
             ctx.stroke();
         }
+    }
+
+    function fractionToDecimal(fraction) {
+        var gcd = function(a, b) {
+        if (b < 0.0000001) return a;
+
+        return gcd(b, Math.floor(a % b));
+        };
+        var len = fraction.toString().length - 2;
+
+        var denominator = Math.pow(10, len);
+        var numerator = fraction * denominator;
+
+        var divisor = gcd(numerator, denominator);
+
+        numerator /= divisor;
+        denominator /= divisor;
+
+        var answer;
+        if(Math.floor(denominator) == 1) {
+            answer = Math.floor(numerator);
+        } else if(Math.floor(denominator) == -1) {
+            answer = Math.floor(numerator)*-1;
+        } else {
+            answer = Math.floor(numerator) + '/' + Math.floor(denominator);
+        }
+        return answer;
+    }
+
+    $("#lines").on("click", function(e) {
+        if(e.target.id == "deleteLine") {
+            lines.splice(e.target.attributes[3], 1)
+            drawLines();
+            e.target.parentNode.parentNode.remove();
+            
+        }
+    });
+
+    function indexOfLine(line) {
+        for(var i = 0; i < lines.length; i++) {
+            if (lines[i] == line) return i;
+        }
+        return "Error";
     }
 });
