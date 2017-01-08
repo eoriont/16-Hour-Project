@@ -50,7 +50,8 @@ $(document).ready(function() {
             startX: mousePos.lastX,
             startY: mousePos.lastY,
             endX: mousePos.x,
-            endY: mousePos.y
+            endY: mousePos.y,
+            id: lines.length
         }
         pushLine(line);
         drawLines();
@@ -88,7 +89,7 @@ $(document).ready(function() {
 
     function pushLine(line) {
         lines.push(line);                                                                         //getEquation(line)
-        $("#lines").append('<tr><td>'+line.startX+'</td><td>'+line.startY+'</td><td>'+"test"+'</td><td><input type="submit" value="X" id="deleteLine" delIndex="'+indexOfLine(line)+'" class="delete"></td></tr>');
+        $("#lines").append('<tr><td>'+line.startX+'</td><td>'+line.startY+'</td><td>'+"test"+'</td><td><input type="submit" value="X" id="deleteLine" lineid="'+line.id+'" class="delete"></td></tr>');
     }
 
     function getEquation(line) {
@@ -147,17 +148,23 @@ $(document).ready(function() {
 
     $("#lines").on("click", function(e) {
         if(e.target.id == "deleteLine") {
-            lines.splice(e.target.attributes[3], 1)
+            var id = e.target.attributes[3].value;
+            writeLinesWithout(id);
+            //console.log(lines);
             drawLines();
             e.target.parentNode.parentNode.remove();
             
         }
     });
 
-    function indexOfLine(line) {
+    function writeLinesWithout(id) {
+        var newlines = [];
         for(var i = 0; i < lines.length; i++) {
-            if (lines[i] == line) return i;
+            var line = lines[i];
+            if(!(line.id == id)) {
+                newlines.push(line);
+            }
         }
-        return "Error";
+        lines = newlines;
     }
 });
