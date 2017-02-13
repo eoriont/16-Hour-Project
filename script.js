@@ -88,29 +88,33 @@ $(document).ready(function() {
     }
 
     function pushLine(line) {
-        lines.push(line);                                                            //getEquation(line)
+        lines.push(line);
         var coord1 = "("+line.startX+","+line.startY+")";
         var coord2 = "("+line.endX+","+line.endY+")";
-        $("#lines").append('<tr><td>'+coord1+'</td><td>'+coord2+'</td><td>'+getEquation(line)+'</td><td><input type="submit" value="X" id="deleteLine" lineid="'+line.id+'" class="delete"></td></tr>');
+        $("#lines").append('<tr><td>'+coord1+'</td><td>'+coord2+'</td><td><p>'+getEquation(line)+'</p></td><td><input type="submit" value="X" id="deleteLine" lineid="'+line.id+'" class="delete"></td></tr>');
+        MathJax.Hub.Queue(["Typeset",MathJax.Hub,$("p:last")[0]]);
     }
 
     function getEquation(line) {
-        var coord1 = {x:line.startX,y:line.startY};
-        var coord2 = {x:line.endX,y:line.endY};
-        var cy = coord1.y-coord2.y;
-        var cx = coord1.x-coord2.x;
-        var m = cy/cx;
-        var part = m * coord1.x;
-        var b = coord1.y - part;
-        if(fractionToDecimal(m*-1).length < (m*-1).length) {
-            m = fractionToDecimal(m*-1);
+        let coord1 = {x:line.startX,y:line.startY};
+        let coord2 = {x:line.endX,y:line.endY};
+        let cy = coord1.y-coord2.y;
+        let cx = coord1.x-coord2.x;
+        let m = cy/cx;
+        let part = m * coord1.x;
+        let b = coord1.y - part;
+
+
+        let mtf = decimalToFraction(m);
+        let stringm;
+        if (mtf["denominator"] == 1) {
+            stringm = m;
         } else {
-            m = m*-1;
+            stringm = "\\("+mtf["numerator"]+" \\over "+mtf["denominator"]+"\\)";
         }
-        if(fractionToDecimal(b).length < b.length) {
-            b = fractionToDecimal(b);
-        }
-        var equation = "y = "+m+"x + "+b;
+        console.log(stringm)
+        console.log(mtf);
+        let equation = "y = "+stringm+"x + "+b;
         return equation;
     }
 
@@ -129,7 +133,7 @@ $(document).ready(function() {
         }
     }
 
-    function fractionToDecimal(fraction) {
+    function decimalToFraction(fraction) {
         var gcd = function(a, b) {
         if (b < 0.0000001) return a;
 
@@ -147,11 +151,20 @@ $(document).ready(function() {
 
         var answer;
         if(Math.floor(denominator) == 1) {
-            answer = Math.floor(numerator);
+            answer = {
+                numerator: Math.floor(numerator),
+                denominator: 1
+            };
         } else if(Math.floor(denominator) == -1) {
-            answer = Math.floor(numerator)*-1;
+            answer = {
+                numerator: Math.floor(numerator)*-1,
+                denominator: 1
+            };
         } else {
-            answer = Math.floor(numerator) + '/' + Math.floor(denominator);
+            answer = {
+                numerator : Math.floor(numerator),
+                denominator : Math.floor(denominator)
+            };
         }
         return answer;
     }
@@ -191,4 +204,11 @@ $(document).ready(function() {
             $('#show-lines-table').animate({"margin-left": '+='+moveLength});
         }
     });
+
+    function loadMathJax() {
+        var script = document.createElement("script");
+        script.type = "text/javascript";
+        script.src  = "http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+        document.getElementsByTagName("head")[0].appendChild(script);
+    }
 });
