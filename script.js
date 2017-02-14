@@ -1,6 +1,5 @@
 $(document).ready(function() {
     var mouseDown;
-
     var cv = {
         canvas : document.createElement("canvas"),
         render : function() {
@@ -16,6 +15,7 @@ $(document).ready(function() {
     var div = document.getElementById("lines");
     var size = 2;
     var ctx = c.getContext("2d");
+    drawGrid();
     var mousePos = {
         lastX: 0,
         lastY: 0,
@@ -34,6 +34,7 @@ $(document).ready(function() {
         b: 0
     }
     var lines = [];
+    var isDecimal = false;
 
     $(c).mousemove(mouseMove);
     c.addEventListener('mousedown', function(evt) {
@@ -58,12 +59,11 @@ $(document).ready(function() {
         mouseDown=false;
     });
 
-
     function getMousePos(canvas, evt) {
         var rect = c.getBoundingClientRect();
         return {
-            lastX: mousePos.lastX,//mousePos.x,
-            lastY: mousePos.lastY,//mousePos.y,
+            lastX: mousePos.lastX,
+            lastY: mousePos.lastY,
             x: evt.clientX - rect.left,
             y: evt.clientY - rect.top
         };
@@ -89,6 +89,10 @@ $(document).ready(function() {
 
     function pushLine(line) {
         lines.push(line);
+        appendLine(line);
+    }
+
+    function appendLine(line) {
         var coord1 = "("+line.startX+","+line.startY+")";
         var coord2 = "("+line.endX+","+line.endY+")";
         $("#lines").append('<tr><td>'+coord1+'</td><td>'+coord2+'</td><td><p>'+getEquation(line)+'</p></td><td><input type="submit" value="X" id="deleteLine" lineid="'+line.id+'" class="delete"></td></tr>');
@@ -100,26 +104,58 @@ $(document).ready(function() {
         let coord2 = {x:line.endX,y:line.endY};
         let cy = coord1.y-coord2.y;
         let cx = coord1.x-coord2.x;
-        let m = cy/cx;
+        let m = -(cy/cx);
         let part = m * coord1.x;
         let b = coord1.y - part;
 
+        let stringm = m;
+        let stringb = b;
+        if(!isDecimal) {
+            let mtf = decimalToFraction(m);
+            let btf = decimalToFraction(b);
+            if (mtf["denominator"] == 1) {
+                stringm = m;
+            } else {
+                let whole = mtf["whole"];
+                if(whole == 0) {
+                    stringm = "\\("+mtf["numerator"]+" \\over "+mtf["denominator"]+"\\)";
+                } else {
+                    stringm = mtf["whole"]+"\\("+mtf["numerator"]+" \\over "+mtf["denominator"]+"\\)";
+                }
+            }
 
-        let mtf = decimalToFraction(m);
-        let stringm;
-        if (mtf["denominator"] == 1) {
-            stringm = m;
-        } else {
-            stringm = "\\("+mtf["numerator"]+" \\over "+mtf["denominator"]+"\\)";
+            if (btf["denominator"] == 1) {
+                stringb = b;
+            } else {
+                let whole = btf["whole"];
+                if(whole == 0) {
+                    stringb = "\\("+btf["numerator"]+" \\over "+btf["denominator"]+"\\)";
+                } else {
+                    stringb = btf["whole"]+"\\("+btf["numerator"]+" \\over "+btf["denominator"]+"\\)";
+                }
+            }
         }
-        console.log(stringm)
-        console.log(mtf);
-        let equation = "y = "+stringm+"x + "+b;
+        
+        let equation = "y = "+stringm+"x + "+stringb;
         return equation;
+    }
+
+    function roundEquations() {
+        clearLinesTable();
+        isDecimal = !isDecimal;
+        writeLinesTable();
+    }
+
+    function writeLinesTable() {
+        for(var i = 0; i < lines.length; i++) {
+            var line = lines[i];
+            appendLine(line);
+        }
     }
 
     function drawLines() {
         ctx.clearRect(0, 0, c.width, c.height);
+        drawGrid();
 
         for(var num = 0; num < lines.length; num++) {
             i=lines[num]
@@ -133,39 +169,22 @@ $(document).ready(function() {
         }
     }
 
-    function decimalToFraction(fraction) {
-        var gcd = function(a, b) {
-        if (b < 0.0000001) return a;
+    function decimalToFraction(decimal) {
+        console.log(decimal)
+        var d = new Fraction(decimal);
+        var ans = d.toFraction(true);
+        var whole = ans.substr(0, ans.indexOf(' '));
+        ans = ans.substr(ans.indexOf(' '));
+        var numerator = ans.substr(0, ans.indexOf('/'));
 
-        return gcd(b, Math.floor(a % b));
+        ans = ans.substr(ans.indexOf('/'));
+        var denominator = ans.substr(1, ans.length);   
+
+        var answer = {
+            whole: whole,
+            numerator: numerator,
+            denominator: denominator
         };
-        var len = fraction.toString().length - 2;
-
-        var denominator = Math.pow(10, len);
-        var numerator = fraction * denominator;
-
-        var divisor = gcd(numerator, denominator);
-
-        numerator /= divisor;
-        denominator /= divisor;
-
-        var answer;
-        if(Math.floor(denominator) == 1) {
-            answer = {
-                numerator: Math.floor(numerator),
-                denominator: 1
-            };
-        } else if(Math.floor(denominator) == -1) {
-            answer = {
-                numerator: Math.floor(numerator)*-1,
-                denominator: 1
-            };
-        } else {
-            answer = {
-                numerator : Math.floor(numerator),
-                denominator : Math.floor(denominator)
-            };
-        }
         return answer;
     }
 
@@ -173,10 +192,8 @@ $(document).ready(function() {
         if(e.target.id == "deleteLine") {
             var id = e.target.attributes[3].value;
             writeLinesWithout(id);
-            //console.log(lines);
             drawLines();
             e.target.parentNode.parentNode.remove();
-            
         }
     });
 
@@ -199,16 +216,57 @@ $(document).ready(function() {
         if($(this).css("margin-left") == moveLength+"px") {
             $('#lines-table').animate({"margin-left": '-='+moveLength});
             $('#show-lines-table').animate({"margin-left": '-='+moveLength});
+            $('#round').animate({"margin-left": '-='+moveLength});
         } else {
             $('#lines-table').animate({"margin-left": '+='+moveLength});
             $('#show-lines-table').animate({"margin-left": '+='+moveLength});
+            $('#round').animate({"margin-left": '+='+moveLength});
         }
     });
 
-    function loadMathJax() {
-        var script = document.createElement("script");
-        script.type = "text/javascript";
-        script.src  = "http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
-        document.getElementsByTagName("head")[0].appendChild(script);
+    $('#round').click(function() {
+        roundEquations();
+        if(isDecimal) {
+            $('#round').val("Decimal");
+        } else {
+            $('#round').val("Rounded Fraction");
+        }
+    });
+
+    function clearLinesTable() {
+        $('#lines').children().remove();
+    }
+
+    function drawGrid() {
+        let height = c.height;
+        let width = c.width;
+
+        let numOfGridLinesY = 50;
+        let numOfGridLinesX = 24;
+
+        for(let i = 0; i < numOfGridLinesX; i++) {
+            let y = i*(height/numOfGridLinesX)
+            
+            ctx.beginPath();
+            ctx.moveTo(0, y);
+            ctx.strokeStyle = "#a9cfd1";
+            if(i == numOfGridLinesX/2) ctx.strokeStyle = "#6f8889";
+            ctx.lineJoin = ctx.lineCap = 'round';
+            ctx.globalCompositeOperation = "source-over";
+            ctx.lineTo(width, y);
+            ctx.stroke();
+        }
+
+        for(let i = 0; i < numOfGridLinesY; i++) {
+            let x = i*(width/numOfGridLinesY)
+            ctx.beginPath();
+            ctx.moveTo(x, 0);
+            ctx.strokeStyle = "#a9cfd1";
+            if(i == numOfGridLinesY/2) ctx.strokeStyle = "#6f8889";
+            ctx.lineJoin = ctx.lineCap = 'round';
+            ctx.globalCompositeOperation = "source-over";
+            ctx.lineTo(x, height);
+            ctx.stroke();
+        }
     }
 });
