@@ -3,16 +3,13 @@
     position:fixed;
     width:100px;
     height:50px;
-    /*right:0px;*/
     background:green;
-    /*top:300px;*/
 }
 #round {
     z-index: 1;
     position:fixed;
     width:125px;
     height:50px;
-    /*right:0px;*/
     background:orange;
     top: 75px;
 }
@@ -37,4 +34,14 @@ canvas {
 .lines-tab {
     left: -40px;
     position: relative;
+}
+#equationInput {
+    z-index: 1;
+    width: 500px;
+    height: 50px;
+    background: lightblue;
+    position: absolute;
+    left: 16px;
+    bottom: 8px;
+    font-size: 50px;
 }

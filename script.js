@@ -140,6 +140,43 @@ $(document).ready(function() {
         return equation;
     }
 
+    function getLineFromEquation(oldEquation) {
+        let equation = oldEquation.replace(/\s/g, '');
+        let m = equation.substr(2, equation.indexOf('x')-2);
+        let b = parseInt(equation.substr(2+m.length+2, equation.length));
+        m = parseInt(m);
+
+        // let y = b;
+        // let mtf = decimalToFraction(m);
+        // let cx = mtf.numerator, cy = mtf.denominator;
+        // y = y + cy;
+        let startX = 0;
+        let startY = m * startX + b;
+
+        let endX = -1000;
+        let endY = m * endX + b;
+
+        var line = {
+            colorr: color.r,
+            colorg: color.g,
+            colorb: color.b,
+            size: size,
+            startX: startX,
+            startY: startY,
+            endX: endX,
+            endY: endY,
+            id: lines.length
+        }
+        return line;
+    }
+    $("#equationInput").on('keyup', function(e) {
+        if (e.keyCode == 13) { //13 = enter
+            let str = $("#equationInput").val();
+            let line = getLineFromEquation(str);
+            pushLine(line);
+        }
+    });
+
     function roundEquations() {
         clearLinesTable();
         isDecimal = !isDecimal;
@@ -170,7 +207,6 @@ $(document).ready(function() {
     }
 
     function decimalToFraction(decimal) {
-        console.log(decimal)
         var d = new Fraction(decimal);
         var ans = d.toFraction(true);
         var whole = ans.substr(0, ans.indexOf(' '));
@@ -269,4 +305,6 @@ $(document).ready(function() {
             ctx.stroke();
         }
     }
+
+    
 });
