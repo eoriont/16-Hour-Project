@@ -5,7 +5,6 @@ $(document).ready(function() {
         render : function() {
             this.canvas.width = document.body.clientWidth;
             this.canvas.height = window.innerHeight;
-            //this.canvas.style.left = '400px';
             this.context = this.canvas.getContext("2d");
             document.body.insertBefore(this.canvas, document.body.childNodes[1]);
         }
@@ -36,31 +35,39 @@ $(document).ready(function() {
     var lines = [];
     var isDecimal = false;
 
+    function Line(coord1, coord2) { 
+        this.color = {
+            r: color.r,
+            g: color.g,
+            b: color.b
+        }
+
+        this.size = 2;
+
+        this.startCoord = coord1;
+        this.endCoord = coord2;
+        this.id = lines.length;
+        this.ick = false;
+    }
+
     $(c).mousemove(mouseMove);
     c.addEventListener('mousedown', function(evt) {
-    mousePos.lastX=evt.clientX-c.getBoundingClientRect().left;
-    mousePos.lastY=evt.clientY-c.getBoundingClientRect().top;
-    lastLine=mousePos;
-    mouseDown=true;});
+        mousePos.lastX=evt.clientX-c.getBoundingClientRect().left;
+        mousePos.lastY=evt.clientY-c.getBoundingClientRect().top;
+        lastLine=mousePos;
+        mouseDown=true;
+    });
+
     c.addEventListener('mouseup', function() {
-        var line = {
-            colorr: color.r,
-            colorg: color.g,
-            colorb: color.b,
-            size: size,
-            startX: mousePos.lastX,
-            startY: mousePos.lastY,
-            endX: mousePos.x,
-            endY: mousePos.y,
-            id: lines.length
-        }
+        let line = new Line(new Coord(mousePos.lastX, mousePos.lastY), new Coord(mousePos.x, mousePos.y));
+        line.ick = true;
         pushLine(line);
         drawLines();
         mouseDown=false;
     });
 
     function getMousePos(canvas, evt) {
-        var rect = c.getBoundingClientRect();
+        let rect = c.getBoundingClientRect();
         return {
             lastX: mousePos.lastX,
             lastY: mousePos.lastY,
@@ -93,18 +100,19 @@ $(document).ready(function() {
     }
 
     function appendLine(line) {
-        var coord1 = "("+line.startX+","+line.startY+")";
-        var coord2 = "("+line.endX+","+line.endY+")";
+        var coord1 = "("+line.startCoord.x+","+line.startCoord.y+")";
+        var coord2 = "("+line.endCoord.x+","+line.endCoord.y+")";
         $("#lines").append('<tr><td>'+coord1+'</td><td>'+coord2+'</td><td><p>'+getEquation(line)+'</p></td><td><input type="submit" value="X" id="deleteLine" lineid="'+line.id+'" class="delete"></td></tr>');
         MathJax.Hub.Queue(["Typeset",MathJax.Hub,$("p:last")[0]]);
     }
 
     function getEquation(line) {
-        let coord1 = {x:line.startX,y:line.startY};
-        let coord2 = {x:line.endX,y:line.endY};
+        let coord1 = new Coord(line.startCoord.x, line.startCoord.y);
+        let coord2 = new Coord(line.endCoord.x, line.endCoord.y);
         let cy = coord1.y-coord2.y;
         let cx = coord1.x-coord2.x;
-        let m = -(cy/cx);
+        let m = (cy/cx);
+        if (line.ick) m = -(cy/cx);
         let part = m * coord1.x;
         let b = coord1.y - part;
 
@@ -146,27 +154,24 @@ $(document).ready(function() {
         let b = parseInt(equation.substr(2+m.length+2, equation.length));
         m = parseInt(m);
 
-        // let y = b;
-        // let mtf = decimalToFraction(m);
-        // let cx = mtf.numerator, cy = mtf.denominator;
-        // y = y + cy;
-        let startX = 0;
-        let startY = m * startX + b;
+        let x1 = 0;
+        let y1 = m * x1 + b;
 
-        let endX = -1000;
-        let endY = m * endX + b;
+        let x2 = -1000;
+        let y2 = m * x2 + b;
 
-        var line = {
-            colorr: color.r,
-            colorg: color.g,
-            colorb: color.b,
-            size: size,
-            startX: startX,
-            startY: startY,
-            endX: endX,
-            endY: endY,
-            id: lines.length
+        let middle = {
+            x: c.width / 2,
+            y: c.height / 2
         }
+
+        x1 = x1+middle.x;
+        y1 = y1+middle.y;
+
+        x2 = x2+middle.x;
+        y2 = y2+middle.y;
+
+        let line = new Line(new Coord(x1, y1), new Coord(x2, y2));
         return line;
     }
     $("#equationInput").on('keyup', function(e) {
@@ -197,11 +202,11 @@ $(document).ready(function() {
         for(var num = 0; num < lines.length; num++) {
             i=lines[num]
             ctx.beginPath();
-            ctx.moveTo(i.startX, i.startY);
-            ctx.strokeStyle = "rgb("+i.colorr+","+i.colorg+","+i.colorb+")";
+            ctx.moveTo(i.startCoord.x, i.startCoord.y);
+            ctx.strokeStyle = "rgb("+i.color.r+","+i.color.g+","+i.color.b+")";
             ctx.lineJoin = ctx.lineCap = 'round';
             ctx.globalCompositeOperation = "source-over";
-            ctx.lineTo(i.endX,i.endY);
+            ctx.lineTo(i.endCoord.x,i.endCoord.y);
             ctx.stroke();
         }
     }
@@ -237,7 +242,7 @@ $(document).ready(function() {
         var newlines = [];
         for(var i = 0; i < lines.length; i++) {
             var line = lines[i];
-            if(!(line.id == id)) {
+            if(line.id != id) {
                 newlines.push(line);
             }
         }
@@ -306,5 +311,32 @@ $(document).ready(function() {
         }
     }
 
-    
+    function getCoords(coord) {
+        let mid = {
+            x: c.width / 2,
+            y: c.height / 2
+        };
+        let coords = new Coord(coord.x+mid.x, coord.y-mid.y);
+        return coords;
+    }
+
+    function ungetCoords(coord) {
+         let mid = {
+            x: c.width / 2,
+            y: c.height / 2
+        };
+
+        let coords = new Coord(coord.x-mid.x, coord.y+mid.y);
+        return coords;
+    }
+
+    function Coord(x, y) {
+        this.x = x;
+        this.y = y;
+
+        this.add = function(coord) {
+            this.x += coord.x;
+            this.y -= coord.y;
+        }
+    }
 });
