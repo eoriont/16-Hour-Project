@@ -14,6 +14,9 @@ $(document).ready(function() {
     var div = document.getElementById("lines");
     var size = 2;
     var ctx = c.getContext("2d");
+    ctx.translate(c.width/2, c.height/2);
+    //ctx.setTransform(1, 1, 0, 0, c.width/2, c.height/2);    
+    console.log("translate");
     drawGrid();
     var mousePos = {
         lastX: 0,
@@ -41,7 +44,6 @@ $(document).ready(function() {
             g: color.g,
             b: color.b
         }
-
         this.size = 2;
 
         this.startCoord = coord1;
@@ -52,44 +54,45 @@ $(document).ready(function() {
 
     $(c).mousemove(mouseMove);
     c.addEventListener('mousedown', function(evt) {
-        mousePos.lastX=evt.clientX-c.getBoundingClientRect().left;
-        mousePos.lastY=evt.clientY-c.getBoundingClientRect().top;
+        mousePos.lastX=evt.clientX+c.getBoundingClientRect().left;
+        mousePos.lastY=evt.clientY+c.getBoundingClientRect().top;
         lastLine=mousePos;
         mouseDown=true;
     });
 
     c.addEventListener('mouseup', function() {
-        let line = new Line(new Coord(mousePos.lastX, mousePos.lastY), new Coord(mousePos.x, mousePos.y));
+        let line = new Line(new Coord(mousePos.lastX, mousePos.lastY), new Coord(Math.round(mousePos.x), Math.round(mousePos.y)));
         line.ick = true;
         pushLine(line);
         drawLines();
         mouseDown=false;
     });
 
-    function getMousePos(canvas, evt) {
+    function getMousePos(evt) {
         let rect = c.getBoundingClientRect();
         return {
             lastX: mousePos.lastX,
             lastY: mousePos.lastY,
-            x: evt.clientX - rect.left,
-            y: evt.clientY - rect.top
+            x: (evt.clientX - rect.left) / (rect.right - rect.left) * c.width,
+            y: (evt.clientY - rect.top) / (rect.bottom - rect.top) * c.height
         };
     }
 
     function mouseMove(evt) {
         lastLine = mousePos;
-        mousePos = getMousePos(c, evt);
+        mousePos = getMousePos(evt);
         ctx.clearRect(0, 0, c.width, c.height);
         drawLines();
+        
 
         ctx.beginPath();
-        ctx.moveTo(mousePos.lastX, mousePos.lastY);
+        ctx.moveTo(mousePos.lastX-(c.width/2), mousePos.lastY-(c.height/2));
         ctx.strokeStyle = "rgb("+color.r+","+color.g+","+color.b+")";
 
         if(mouseDown) {
             ctx.lineJoin = ctx.lineCap = 'round';
             ctx.globalCompositeOperation = "source-over";
-            ctx.lineTo(mousePos.x,mousePos.y);
+            ctx.lineTo(mousePos.x-(c.width/2),mousePos.y-(c.height/2));
             ctx.stroke();
         }
     }
@@ -100,19 +103,19 @@ $(document).ready(function() {
     }
 
     function appendLine(line) {
-        var coord1 = "("+line.startCoord.x+","+line.startCoord.y+")";
-        var coord2 = "("+line.endCoord.x+","+line.endCoord.y+")";
-        $("#lines").append('<tr><td>'+coord1+'</td><td>'+coord2+'</td><td><p>'+getEquation(line)+'</p></td><td><input type="submit" value="X" id="deleteLine" lineid="'+line.id+'" class="delete"></td></tr>');
+        var l = new Line(line.startCoord, line.endCoord);
+        var coord1 = "("+l.startCoord.x+","+l.startCoord.y+")";
+        var coord2 = "("+l.endCoord.x+","+l.endCoord.y+")";
+        $("#lines").append('<tr><td>'+coord1+'</td><td>'+coord2+'</td><td><p>'+getEquation(l)+'</p></td><td><input type="submit" value="X" id="deleteLine" lineid="'+line.id+'" class="delete"></td></tr>');
         MathJax.Hub.Queue(["Typeset",MathJax.Hub,$("p:last")[0]]);
     }
 
     function getEquation(line) {
-        let coord1 = new Coord(line.startCoord.x, line.startCoord.y);
-        let coord2 = new Coord(line.endCoord.x, line.endCoord.y);
+        let coord1 = line.startCoord;
+        let coord2 = line.endCoord;
         let cy = coord1.y-coord2.y;
         let cx = coord1.x-coord2.x;
-        let m = (cy/cx);
-        if (line.ick) m = -(cy/cx);
+        let m = -(cy/cx);
         let part = m * coord1.x;
         let b = coord1.y - part;
 
@@ -149,29 +152,20 @@ $(document).ready(function() {
     }
 
     function getLineFromEquation(oldEquation) {
+        debugger;
         let equation = oldEquation.replace(/\s/g, '');
         let m = equation.substr(2, equation.indexOf('x')-2);
         let b = parseInt(equation.substr(2+m.length+2, equation.length));
         m = parseInt(m);
 
-        let x1 = 0;
+        let x1 = c.width*2;
         let y1 = m * x1 + b;
 
-        let x2 = -1000;
+        let x2 = -c.width*2;
         let y2 = m * x2 + b;
 
-        let middle = {
-            x: c.width / 2,
-            y: c.height / 2
-        }
-
-        x1 = x1+middle.x;
-        y1 = y1+middle.y;
-
-        x2 = x2+middle.x;
-        y2 = y2+middle.y;
-
         let line = new Line(new Coord(x1, y1), new Coord(x2, y2));
+        line.ick = true;
         return line;
     }
     $("#equationInput").on('keyup', function(e) {
@@ -179,6 +173,7 @@ $(document).ready(function() {
             let str = $("#equationInput").val();
             let line = getLineFromEquation(str);
             pushLine(line);
+            drawLines();
         }
     });
 
@@ -196,18 +191,19 @@ $(document).ready(function() {
     }
 
     function drawLines() {
-        ctx.clearRect(0, 0, c.width, c.height);
+        ctx.clearRect(-c.width, c.height, c.width*2, -c.height*2);
         drawGrid();
 
         for(var num = 0; num < lines.length; num++) {
             i=lines[num]
             ctx.beginPath();
-            ctx.moveTo(i.startCoord.x, i.startCoord.y);
+            ctx.moveTo(i.startCoord.x-(c.width/2), i.startCoord.y-(c.height/2));
             ctx.strokeStyle = "rgb("+i.color.r+","+i.color.g+","+i.color.b+")";
             ctx.lineJoin = ctx.lineCap = 'round';
             ctx.globalCompositeOperation = "source-over";
-            ctx.lineTo(i.endCoord.x,i.endCoord.y);
+            ctx.lineTo(i.endCoord.x-(c.width/2),i.endCoord.y-(c.height/2))  ;
             ctx.stroke();
+            ctx.closePath();
         }
     }
 
@@ -285,49 +281,30 @@ $(document).ready(function() {
         let numOfGridLinesY = 50;
         let numOfGridLinesX = 24;
 
-        for(let i = 0; i < numOfGridLinesX; i++) {
-            let y = i*(height/numOfGridLinesX)
+        for(let i = -numOfGridLinesX; i < numOfGridLinesX; i++) {
+            let y = i*(height/numOfGridLinesX);
             
             ctx.beginPath();
-            ctx.moveTo(0, y);
+            ctx.moveTo(-width, y);
             ctx.strokeStyle = "#a9cfd1";
-            if(i == numOfGridLinesX/2) ctx.strokeStyle = "#6f8889";
+            if(i == 0) ctx.strokeStyle = "#6f8889";
             ctx.lineJoin = ctx.lineCap = 'round';
             ctx.globalCompositeOperation = "source-over";
             ctx.lineTo(width, y);
             ctx.stroke();
         }
 
-        for(let i = 0; i < numOfGridLinesY; i++) {
+        for(let i = -numOfGridLinesY; i < numOfGridLinesY; i++) {
             let x = i*(width/numOfGridLinesY)
             ctx.beginPath();
-            ctx.moveTo(x, 0);
+            ctx.moveTo(x, -height);
             ctx.strokeStyle = "#a9cfd1";
-            if(i == numOfGridLinesY/2) ctx.strokeStyle = "#6f8889";
+            if(i == 0) ctx.strokeStyle = "#6f8889";
             ctx.lineJoin = ctx.lineCap = 'round';
             ctx.globalCompositeOperation = "source-over";
             ctx.lineTo(x, height);
             ctx.stroke();
         }
-    }
-
-    function getCoords(coord) {
-        let mid = {
-            x: c.width / 2,
-            y: c.height / 2
-        };
-        let coords = new Coord(coord.x+mid.x, coord.y-mid.y);
-        return coords;
-    }
-
-    function ungetCoords(coord) {
-         let mid = {
-            x: c.width / 2,
-            y: c.height / 2
-        };
-
-        let coords = new Coord(coord.x-mid.x, coord.y+mid.y);
-        return coords;
     }
 
     function Coord(x, y) {
