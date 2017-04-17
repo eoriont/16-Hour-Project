@@ -15,6 +15,11 @@ $(document).ready(function() {
     var size = 2;
     var ctx = c.getContext("2d");
     ctx.translate(c.width/2, c.height/2);
+    ctx.fillRect(0, 0, 100, 100);
+    var trans = {
+        x: c.width / 2,
+        y: c.height / 2
+    }
     //ctx.setTransform(1, 1, 0, 0, c.width/2, c.height/2);    
     console.log("translate");
     drawGrid();
@@ -24,12 +29,6 @@ $(document).ready(function() {
         x: 0,
         y:0
     };
-    var lastLine = {
-        lastX: 0,
-        lastY: 0,
-        x: 0,
-        y: 0
-    }
     var color = {
         r: 0,
         g: 0,
@@ -49,20 +48,20 @@ $(document).ready(function() {
         this.startCoord = coord1;
         this.endCoord = coord2;
         this.id = lines.length;
-        this.ick = false;
+        this.ife = false;
     }
 
     $(c).mousemove(mouseMove);
     c.addEventListener('mousedown', function(evt) {
-        mousePos.lastX=evt.clientX+c.getBoundingClientRect().left;
-        mousePos.lastY=evt.clientY+c.getBoundingClientRect().top;
-        lastLine=mousePos;
-        mouseDown=true;
+        let mp = getMousePos(evt);
+        let rect = c.getBoundingClientRect();
+        mousePos.lastX = mp.x;
+        mousePos.lastY = mp.y;
+        mouseDown = true;
     });
 
     c.addEventListener('mouseup', function() {
         let line = new Line(new Coord(mousePos.lastX, mousePos.lastY), new Coord(Math.round(mousePos.x), Math.round(mousePos.y)));
-        line.ick = true;
         pushLine(line);
         drawLines();
         mouseDown=false;
@@ -70,29 +69,30 @@ $(document).ready(function() {
 
     function getMousePos(evt) {
         let rect = c.getBoundingClientRect();
-        return {
+        var mp = {
             lastX: mousePos.lastX,
             lastY: mousePos.lastY,
-            x: (evt.clientX - rect.left) / (rect.right - rect.left) * c.width,
-            y: (evt.clientY - rect.top) / (rect.bottom - rect.top) * c.height
-        };
+            x: evt.clientX - rect.left - trans.x,
+            y: evt.clientY - rect.top - trans.y
+        }
+        return mp;
     }
 
     function mouseMove(evt) {
-        lastLine = mousePos;
         mousePos = getMousePos(evt);
-        ctx.clearRect(0, 0, c.width, c.height);
+        //ctx.clearRect(-c.width, -c.height, c.width, c.height);
         drawLines();
         
 
         ctx.beginPath();
-        ctx.moveTo(mousePos.lastX-(c.width/2), mousePos.lastY-(c.height/2));
+        ctx.moveTo(mousePos.lastX, mousePos.lastY);
         ctx.strokeStyle = "rgb("+color.r+","+color.g+","+color.b+")";
 
         if(mouseDown) {
             ctx.lineJoin = ctx.lineCap = 'round';
             ctx.globalCompositeOperation = "source-over";
-            ctx.lineTo(mousePos.x-(c.width/2),mousePos.y-(c.height/2));
+            //ctx.lineTo(mousePos.x-(c.width/2),mousePos.y-(c.height/2));
+            ctx.lineTo(mousePos.x,mousePos.y);
             ctx.stroke();
         }
     }
@@ -118,6 +118,8 @@ $(document).ready(function() {
         let m = -(cy/cx);
         let part = m * coord1.x;
         let b = coord1.y - part;
+        b = -b;
+        //if (!line.ife) b = -b;
 
         let stringm = m;
         let stringb = b;
@@ -164,8 +166,8 @@ $(document).ready(function() {
         let x2 = -c.width*2;
         let y2 = m * x2 + b;
 
-        let line = new Line(new Coord(x1, y1), new Coord(x2, y2));
-        line.ick = true;
+        let line = new Line(new Coord(x1-(trans.x/m), c.height-y1), new Coord(x2-(trans.x/m), c.height-y2));
+        line.ife = true;
         return line;
     }
     $("#equationInput").on('keyup', function(e) {
@@ -197,11 +199,13 @@ $(document).ready(function() {
         for(var num = 0; num < lines.length; num++) {
             i=lines[num]
             ctx.beginPath();
-            ctx.moveTo(i.startCoord.x-(c.width/2), i.startCoord.y-(c.height/2));
+            // ctx.moveTo(i.startCoord.x-(c.width/2), i.startCoord.y-(c.height/2));
+            ctx.moveTo(i.startCoord.x, i.startCoord.y);
             ctx.strokeStyle = "rgb("+i.color.r+","+i.color.g+","+i.color.b+")";
             ctx.lineJoin = ctx.lineCap = 'round';
             ctx.globalCompositeOperation = "source-over";
-            ctx.lineTo(i.endCoord.x-(c.width/2),i.endCoord.y-(c.height/2))  ;
+            //ctx.lineTo(i.endCoord.x-(c.width/2),i.endCoord.y-(c.height/2));
+            ctx.lineTo(i.endCoord.x,i.endCoord.y);
             ctx.stroke();
             ctx.closePath();
         }
