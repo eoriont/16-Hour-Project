@@ -15,12 +15,10 @@ $(document).ready(function() {
     var size = 2;
     var ctx = c.getContext("2d");
     ctx.translate(c.width/2, c.height/2);
-    ctx.fillRect(0, 0, 100, 100);
     var trans = {
         x: c.width / 2,
         y: c.height / 2
     }
-    //ctx.setTransform(1, 1, 0, 0, c.width/2, c.height/2);    
     console.log("translate");
     drawGrid();
     var mousePos = {
@@ -103,7 +101,7 @@ $(document).ready(function() {
     }
 
     function appendLine(line) {
-        var l = new Line(line.startCoord, line.endCoord);
+        var l = line;
         var coord1 = "("+l.startCoord.x+","+l.startCoord.y+")";
         var coord2 = "("+l.endCoord.x+","+l.endCoord.y+")";
         $("#lines").append('<tr><td>'+coord1+'</td><td>'+coord2+'</td><td><p>'+getEquation(l)+'</p></td><td><input type="submit" value="X" id="deleteLine" lineid="'+line.id+'" class="delete"></td></tr>');
@@ -111,6 +109,7 @@ $(document).ready(function() {
     }
 
     function getEquation(line) {
+        debugger;
         let coord1 = line.startCoord;
         let coord2 = line.endCoord;
         let cy = coord1.y-coord2.y;
@@ -118,8 +117,7 @@ $(document).ready(function() {
         let m = -(cy/cx);
         let part = m * coord1.x;
         let b = coord1.y - part;
-        b = -b;
-        //if (!line.ife) b = -b;
+        if (line.ife) b = -b;
 
         let stringm = m;
         let stringb = b;
@@ -154,7 +152,6 @@ $(document).ready(function() {
     }
 
     function getLineFromEquation(oldEquation) {
-        debugger;
         let equation = oldEquation.replace(/\s/g, '');
         let m = equation.substr(2, equation.indexOf('x')-2);
         let b = parseInt(equation.substr(2+m.length+2, equation.length));
