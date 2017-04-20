@@ -109,14 +109,14 @@ $(document).ready(function() {
     }
 
     function getEquation(line) {
-        debugger;
         let coord1 = line.startCoord;
         let coord2 = line.endCoord;
         let cy = coord1.y-coord2.y;
         let cx = coord1.x-coord2.x;
         let m = -(cy/cx);
-        let part = m * coord1.x;
-        let b = coord1.y - part;
+        let b = coord1.y - (-m*coord1.x);
+        // if (b <= 0) b-=2;
+        // else b+=2;
         if (line.ife) b = -b;
 
         let stringm = m;
@@ -156,6 +156,8 @@ $(document).ready(function() {
         let m = equation.substr(2, equation.indexOf('x')-2);
         let b = parseInt(equation.substr(2+m.length+2, equation.length));
         m = parseInt(m);
+        if (b <= 0) b-=2;
+        else b+=2;
 
         let x1 = c.width*2;
         let y1 = m * x1 + b;
