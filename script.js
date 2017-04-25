@@ -3,7 +3,7 @@ $(document).ready(function() {
     var cv = {
         canvas : document.createElement("canvas"),
         render : function() {
-            this.canvas.width = document.body.clientWidth;
+            this.canvas.width = window.innerWidth;
             this.canvas.height = window.innerHeight;
             this.context = this.canvas.getContext("2d");
             document.body.insertBefore(this.canvas, document.body.childNodes[1]);
@@ -177,7 +177,8 @@ $(document).ready(function() {
         let x2 = -c.width*2;
         let y2 = m * x2 + b;
 
-        let line = new Line(new Coord(x1-(trans.x/m), c.height-y1), new Coord(x2-(trans.x/m), c.height-y2));
+        let line = new Line(new Coord(x1, -y1), new Coord(x2, -y2));
+        //let line = new Line(new Coord(x1-(trans.x/m), c.height-y1), new Coord(x2-(trans.x/m), c.height-y2));
         line.ife = true;
         line.equation.fin = true;
         line.equation.m = m;
