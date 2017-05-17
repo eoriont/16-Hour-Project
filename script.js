@@ -62,7 +62,15 @@ $(document).ready(function() {
         mousePos.lastX = mp.x;
         mousePos.lastY = mp.y;
         mouseDown = true;
+        drawMousePos();
     });
+
+    function drawMousePos() {
+        ctx.font = "30px Arial";
+        let c = new Coord(mousePos.x, mousePos.y);
+        let wc = getWierdCoord(c);
+        ctx.fillText(wc.x+", "+wc.y,c.x,c.y);
+    }
 
     c.addEventListener('mouseup', function() {
         let line = new Line(new Coord(mousePos.lastX, mousePos.lastY), new Coord(Math.round(mousePos.x), Math.round(mousePos.y)));
@@ -86,6 +94,7 @@ $(document).ready(function() {
         mousePos = getMousePos(evt);
         //ctx.clearRect(-c.width, -c.height, c.width, c.height);
         drawLines();
+        drawMousePos();
         
 
         ctx.beginPath();
@@ -108,10 +117,33 @@ $(document).ready(function() {
 
     function appendLine(line) {
         var l = line;
-        var coord1 = "("+l.startCoord.x+","+l.startCoord.y+")";
-        var coord2 = "("+l.endCoord.x+","+l.endCoord.y+")";
+        var wc1 = getWierdCoord(l.startCoord);
+        var wc2 = getWierdCoord(l.endCoord);;
+        var coord1 = "("+wc1.x+","+wc1.y+")";
+        var coord2 = "("+wc2.x+","+wc2.y+")";
         $("#lines").append('<tr><td>'+coord1+'</td><td>'+coord2+'</td><td><p>'+getEquation(l)+'</p></td><td><input type="submit" value="X" id="deleteLine" lineid="'+line.id+'" class="delete"></td></tr>');
         MathJax.Hub.Queue(["Typeset",MathJax.Hub,$("p:last")[0]]);
+    }
+
+    function getWierdCoord(coord) {
+        let y = coord.y;
+        let newY = y;
+        newY = newY.toString();
+        if (y < 0) {
+            newY = newY.substr(1, newY.length);
+            console.log(newY);
+            
+        } else if (y == 0) {
+            
+        } else if (y > 0) {
+            newY = "-"+newY;
+        }
+        newY = parseInt(newY);
+        
+        
+        
+        let newCoord = new Coord(coord.x, newY);
+        return newCoord;
     }
 
     function getEquation(line) {
