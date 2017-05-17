@@ -19,7 +19,6 @@ $(document).ready(function() {
         x: c.width / 2,
         y: c.height / 2
     }
-    console.log("translate");
     drawGrid();
     var mousePos = {
         lastX: 0,
@@ -92,7 +91,6 @@ $(document).ready(function() {
 
     function mouseMove(evt) {
         mousePos = getMousePos(evt);
-        //ctx.clearRect(-c.width, -c.height, c.width, c.height);
         drawLines();
         drawMousePos();
         
@@ -104,10 +102,18 @@ $(document).ready(function() {
         if(mouseDown) {
             ctx.lineJoin = ctx.lineCap = 'round';
             ctx.globalCompositeOperation = "source-over";
-            //ctx.lineTo(mousePos.x-(c.width/2),mousePos.y-(c.height/2));
             ctx.lineTo(mousePos.x,mousePos.y);
             ctx.stroke();
+
+            drawEquation();
         }
+    }
+
+    function drawEquation() {
+        let l = new Line(new Coord(mousePos.lastX, mousePos.lastY), new Coord(mousePos.x, mousePos.y));
+        let equation = getEquationDecimal(l);
+        ctx.font = "30px Arial";
+        ctx.fillText(equation, mousePos.x, mousePos.y+30)
     }
 
     function pushLine(line) {
@@ -131,16 +137,12 @@ $(document).ready(function() {
         newY = newY.toString();
         if (y < 0) {
             newY = newY.substr(1, newY.length);
-            console.log(newY);
-            
         } else if (y == 0) {
             
         } else if (y > 0) {
             newY = "-"+newY;
         }
         newY = parseInt(newY);
-        
-        
         
         let newCoord = new Coord(coord.x, newY);
         return newCoord;
@@ -151,14 +153,12 @@ $(document).ready(function() {
             let e = "y = "+line.equation.m+"x + "+line.equation.b;
             return e;
         }
-        let coord1 = line.startCoord;
-        let coord2 = line.endCoord;
+        let coord1 = getSuperWierdCoord(line.startCoord);
+        let coord2 = getSuperWierdCoord(line.endCoord);
         let cy = coord1.y-coord2.y;
         let cx = coord1.x-coord2.x;
         let m = -(cy/cx);
         let b = (coord1.y - (-m*coord1.x));
-        // if (b <= 0) b-=2;
-        // else b-=2;
         if (line.ife) b = -b;
 
         let stringm = m;
@@ -191,6 +191,56 @@ $(document).ready(function() {
         
         let equation = "y = "+stringm+"x + "+stringb;
         return equation;
+    }
+
+    function getEquationDecimal(line) {
+        if (line.equation.fin) {
+            let e = "y = "+line.equation.m+"x + "+line.equation.b;
+            return e;
+        }
+        let coord1 = getSuperWierdCoord(line.startCoord);
+        let coord2 = getSuperWierdCoord(line.endCoord);
+        let cy = coord1.y-coord2.y;
+        let cx = coord1.x-coord2.x;
+        let m = -(cy/cx);
+        let b = (coord1.y - (-m*coord1.x));
+        if (line.ife) b = -b;
+
+        let stringm = m;
+        let stringb = b;
+        
+        let equation = "y = "+stringm+"x + "+stringb;
+        return equation;
+    }
+
+    function getSuperWierdCoord(coord) {
+        let y = coord.y;
+        let newY = y;
+        newY = newY.toString();
+        if (y < 0) {
+            newY = newY.substr(1, newY.length);
+        } else if (y == 0) {
+            
+        } else if (y > 0) {
+            newY = "-"+newY;
+        }
+        newY = parseInt(newY);
+
+        let x = coord.x;
+        let newX = x;
+        newX = newX.toString();
+
+        if (x < 0) {
+            newX = newX.substr(1, newX.length);
+        } else if (x == 0) {
+            
+        } else if (x > 0) {
+            newX = "-"+newX;
+        }
+        newX = parseInt(newX);
+        
+        let newCoord = new Coord(newX, newY);
+        return newCoord;
     }
 
     function getLineFromEquation(oldEquation) {
